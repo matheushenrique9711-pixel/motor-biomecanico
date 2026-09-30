@@ -5,6 +5,7 @@ Inicializa a API com configuração, CORS, documentação, e endpoints.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os
 import uvicorn
 import logging
 
@@ -31,12 +32,14 @@ def create_app() -> FastAPI:
 
     # ========== MIDDLEWARE ==========
 
-    # CORS para desenvolvimento (permissivo)
-    # Em produção: seria mais restritivo
+    # CORS: origens permitidas via env CORS_ORIGINS (separadas por vírgula).
+    # Sem a variável, libera qualquer origem (sem credenciais) para desenvolvimento.
+    cors_origins = [o.strip().rstrip("/") for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+    allow_all = not cors_origins
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Em prod: ["http://localhost:5173", "https://app.domain.com"]
-        allow_credentials=True,
+        allow_origins=["*"] if allow_all else cors_origins,
+        allow_credentials=not allow_all,
         allow_methods=["*"],
         allow_headers=["*"],
     )

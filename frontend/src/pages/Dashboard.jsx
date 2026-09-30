@@ -7,7 +7,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Dashboard.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://backend:8000/api';
+const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+const API_URL = `${API_ORIGIN}/api`;
 
 export default function Dashboard() {
   // Estado da aplicação

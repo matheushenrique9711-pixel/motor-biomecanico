@@ -206,7 +206,7 @@ export const Visualization3D = ({
       renderer.domElement.removeEventListener('mousemove', () => {});
       renderer.domElement.removeEventListener('mouseup', () => {});
       mountRef.current?.removeChild(renderer.domElement);
-      geometry.dispose();
+      meshRef.current?.geometry.dispose();
       renderer.dispose();
     };
   }, [stlUrl, onLoaded, onError]);
