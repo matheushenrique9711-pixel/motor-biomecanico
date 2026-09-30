@@ -113,6 +113,37 @@ def create_tables_from_orm() -> bool:
         return False
 
 
+def ensure_missing_tables() -> None:
+    """Create any ORM tables missing after migrations (e.g. foot_condition_presets)."""
+    try:
+        init_db()  # create_all is idempotent (checkfirst)
+    except Exception as e:
+        logger.error(f"✗ Failed to create missing tables: {str(e)}")
+
+
+def seed_presets_if_empty() -> str:
+    """Load the 10 clinical presets from database/seed_presets.sql when the table is empty."""
+    from pathlib import Path
+    try:
+        sql_path = Path(__file__).parent.parent.parent / "database" / "seed_presets.sql"
+        if not sql_path.exists():
+            logger.warning("seed_presets.sql not found, skipping presets seed")
+            return "missing_file"
+        with engine.begin() as conn:
+            count = conn.execute(text("SELECT COUNT(*) FROM foot_condition_presets")).scalar()
+            if count:
+                return "already_seeded"
+            conn.execute(text(
+                "ALTER TABLE foot_condition_presets ALTER COLUMN id SET DEFAULT gen_random_uuid()"
+            ))
+            conn.exec_driver_sql(sql_path.read_text(encoding="utf-8"))
+        logger.info("✓ Presets seeded")
+        return "success"
+    except Exception as e:
+        logger.error(f"✗ Presets seeding failed: {str(e)}")
+        return "error"
+
+
 def seed_if_empty() -> Dict[str, Any]:
     """
     Seed database with test data if it's empty.
@@ -187,6 +218,10 @@ def initialize_database(seed: bool = True) -> Dict[str, Any]:
         results['steps']['schema_creation'] = 'success'
     else:
         results['steps']['schema_creation'] = 'skipped'
+
+    # Step 3b: make sure every ORM table exists (migrations may be behind the models)
+    ensure_missing_tables()
+    results['steps']['presets'] = seed_presets_if_empty() if seed else 'skipped'
 
     # Step 4: Seed database if enabled
     if seed:
