@@ -10,7 +10,8 @@ from app.database.models import (
 )
 from app.database.repository import (
     PatientRepository, ClinicalCaseRepository, AdjustmentHistoryRepository,
-    CaseAnalysisRepository, CaseNotesRepository, CaseFileRepository
+    CaseAnalysisRepository, CaseNotesRepository, CaseFileRepository,
+    PresetRepository
 )
 from app.database.initialize import initialize_database, get_database_info
 
@@ -23,6 +24,7 @@ __all__ = [
     # Repositories
     'PatientRepository', 'ClinicalCaseRepository', 'AdjustmentHistoryRepository',
     'CaseAnalysisRepository', 'CaseNotesRepository', 'CaseFileRepository',
+    'PresetRepository',
     # Initialization
     'initialize_database', 'get_database_info',
 ]
