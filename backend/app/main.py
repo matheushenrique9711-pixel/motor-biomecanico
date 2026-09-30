@@ -3,7 +3,11 @@ Aplicação principal FastAPI para Motor Biomecânico Paramétrico.
 Inicializa a API com configuração, CORS, documentação, e endpoints.
 """
 
-from fastapi import FastAPI
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import uvicorn
@@ -51,7 +55,7 @@ def create_app() -> FastAPI:
 
     # ========== ROOT ENDPOINTS ==========
 
-    @app.get("/", tags=["root"], summary="Root endpoint")
+    @app.get("/api/info", tags=["root"], summary="Root endpoint")
     async def root():
         """Root endpoint com informações básicas da API."""
         return {
@@ -83,6 +87,21 @@ def create_app() -> FastAPI:
         }
 
     # ========== STARTUP EVENTS ==========
+
+    # ========== FRONTEND (SPA build servido pelo próprio backend) ==========
+    static_dir = Path(__file__).resolve().parent.parent / "static"
+    if (static_dir / "index.html").exists():
+        if (static_dir / "assets").exists():
+            app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def spa(full_path: str):
+            if full_path.startswith(("api/", "docs", "openapi.json", "redoc")):
+                raise HTTPException(status_code=404, detail="Not Found")
+            candidate = (static_dir / full_path).resolve()
+            if full_path and candidate.is_file() and static_dir in candidate.parents:
+                return FileResponse(candidate)
+            return FileResponse(static_dir / "index.html")
 
     @app.on_event("startup")
     async def startup_event():
